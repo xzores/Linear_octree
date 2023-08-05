@@ -35,9 +35,6 @@ import "core:c"
 //1000 0100 001U UUUU
 //and so on...
 
-TRACY_ENABLE :: #config(TRACY_ENABLE, false)
-import tracy "../tracy"
-
 Iterator :: struct(Data_type : typeid) {
     index : int,
     octree : ^Octree(Data_type),
@@ -59,7 +56,6 @@ make_iterator :: proc(octree : ^Octree($Holding)) -> Iterator(Holding) {
 
 @(optimization_mode = "speed")
 iterate :: proc(it : ^Iterator($Holding)) -> (key: [4]i16, val: Holding, cond: bool) {
-    tracy.Zone();
 
     cond = it.index < len(it.octree.entries);
     
@@ -83,7 +79,6 @@ init_octree :: proc(using o : ^Octree($Holding)) {
 
 @(optimization_mode = "speed")
 set_at :: proc(using o : ^Octree($Holding), data : Holding, pos : [3]i16, loc := #caller_location) {
-	tracy.Zone();
 	
 	seaching_for : u32 = get_encoding(pos.x, pos.y, pos.z, 1);
 
@@ -93,7 +88,6 @@ set_at :: proc(using o : ^Octree($Holding), data : Holding, pos : [3]i16, loc :=
 	if !found {
 		//fmt.printf("not found, insert at index : %32b\n", seaching_for);
 		{
-			tracy.ZoneN("inject at");
 			inject_at(&entries, index, Octant(Holding){encoding = seaching_for, data = data});
 		}
 		//_check_sorted(o, index, loc);
@@ -118,7 +112,6 @@ set_at :: proc(using o : ^Octree($Holding), data : Holding, pos : [3]i16, loc :=
 //Is only fast for very small octrees.
 unordered_add :: proc(using o : ^Octree($Holding), data : Holding, pos : [3]i16, loc := #caller_location) {
     using slice;
-	tracy.Zone();
 
     enc : u32 = get_encoding(pos.x, pos.y, pos.z, 1);
     append(&entries, Octant(Holding){encoding = enc, data = data});
@@ -134,7 +127,6 @@ find_container_octant_pos :: proc(using o : ^Octree($Holding), pos : [3]i16) ->
 @(optimization_mode = "speed")
 find_container_octant_encoding :: proc(using o : ^Octree($Holding), seaching_for : u32) -> 
 								(octant : Octant(Holding), found : bool, index : int, level : i16) {
-	tracy.Zone();
 	
 	found = false;
 	
@@ -241,7 +233,6 @@ find_container_octant_encoding :: proc(using o : ^Octree($Holding), seaching_for
 
 @(optimization_mode = "speed")
 sort :: proc (using o : ^Octree($Holding)) {
-	tracy.Zone();
 
     slice.sort_by(entries[:], proc(i : Octant(Holding), j : Octant(Holding)) -> bool {
 		
@@ -253,7 +244,6 @@ sort :: proc (using o : ^Octree($Holding)) {
 @(optimization_mode = "speed")
 prune_ranged :: proc(using o : ^Octree($Holding), lower : int, upper : int) {
     //Combines voxels of same type.
-	tracy.Zone();
 
 	lower : int = math.max(0, lower);
 	upper : int = math.min(len(entries)-1, upper);
@@ -278,7 +268,6 @@ prune_ranged :: proc(using o : ^Octree($Holding), lower : int, upper : int) {
         last_val : u32;
         last_data : Holding;
 		{
-			tracy.ZoneN("Searching zone");
 
 			#no_bounds_check for i in lower..=upper { //TODO look 8 ahead, if it is not the same, then skip some of them (binary search forward?)
 				e := entries[i];
@@ -317,7 +306,6 @@ prune_ranged :: proc(using o : ^Octree($Holding), lower : int, upper : int) {
 		}
 
 		{
-			tracy.ZoneN("Combination execution");
 			//becasuse we remove elements, we do it reverse, this keeps the ordering.
 			#reverse for comb in operations {
 				new_upp -= 7; // we remove 7 elements, and so we have to check 7 less.
@@ -349,7 +337,6 @@ prune_octree :: proc(using o : ^Octree($Holding)) {
 prune :: proc{prune_ranged, prune_octree};
 
 destroy_octree :: proc(using o : ^Octree($Holding)) {
-	tracy.Zone();
 
 	delete(o.entries);
 }

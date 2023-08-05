@@ -2,15 +2,12 @@ package octree;
 
 import "core:slice"
 
-import tracy "../tracy"
-
 MAX_DEPTH :: 7;
 LEVEL_MASK : u32 : 0b1111;
 CHAR_BIT :: 8; //8 bits in a u8
 
 @(optimization_mode = "speed")
 _encode_morton :: proc(x : i16, y : i16, z : i16, l : i16, loc := #caller_location) -> u32 {
-    //tracy.Zone();
 	answer : u32 = 0;
 	
 	/*
@@ -40,7 +37,6 @@ _encode_morton :: proc(x : i16, y : i16, z : i16, l : i16, loc := #caller_locati
 
 @(optimization_mode = "speed")
 _decode_morton :: proc (encoding : u32, loc := #caller_location) -> (x : i16, y : i16, z : i16, l : i16) {
-	//tracy.Zone();
 
 	for i : u32 = 0; i < CHAR_BIT; i+=1 {
 		l |= i16((encoding & (u32(1) << (4 * i + 0))) >> (3 * i + 0));
@@ -53,8 +49,7 @@ _decode_morton :: proc (encoding : u32, loc := #caller_location) -> (x : i16, y 
 }
 
 _get_mask :: proc (depth : i16, mask_off_stop : bool) -> u32 {
-	//tracy.Zone();
-
+	
     mask : u32 = 0b1111_1111_1111_1111_1111_1111_1111_1111;
 
     for i : i16 = 0; i < depth; i+= 1 {
